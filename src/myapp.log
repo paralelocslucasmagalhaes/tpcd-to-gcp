@@ -1,0 +1,30 @@
+2019-12-21 10:35:36,636 - INFO - Missing pipeline option (runner). Executing pipeline using the default runner: DirectRunner.
+2019-12-21 10:35:54,515 - INFO - Missing pipeline option (runner). Executing pipeline using the default runner: DirectRunner.
+2019-12-21 10:35:54,645 - INFO - ==================== <function annotate_downstream_side_inputs at 0x00000271D91671E0> ====================
+2019-12-21 10:35:54,646 - INFO - ==================== <function fix_side_input_pcoll_coders at 0x00000271D91672F0> ====================
+2019-12-21 10:35:54,646 - INFO - ==================== <function lift_combiners at 0x00000271D9167378> ====================
+2019-12-21 10:35:54,646 - INFO - ==================== <function expand_sdf at 0x00000271D9167400> ====================
+2019-12-21 10:35:54,646 - INFO - ==================== <function expand_gbk at 0x00000271D9167488> ====================
+2019-12-21 10:35:54,646 - INFO - ==================== <function sink_flattens at 0x00000271D9167598> ====================
+2019-12-21 10:35:54,646 - INFO - ==================== <function greedily_fuse at 0x00000271D9167620> ====================
+2019-12-21 10:35:54,647 - INFO - ==================== <function read_to_impulse at 0x00000271D91676A8> ====================
+2019-12-21 10:35:54,647 - INFO - ==================== <function impulse_to_input at 0x00000271D9167730> ====================
+2019-12-21 10:35:54,647 - INFO - ==================== <function inject_timer_pcollections at 0x00000271D91678C8> ====================
+2019-12-21 10:35:54,647 - INFO - ==================== <function sort_stages at 0x00000271D9167950> ====================
+2019-12-21 10:35:54,647 - INFO - ==================== <function window_pcollection_coders at 0x00000271D91679D8> ====================
+2019-12-21 10:35:54,647 - INFO - Running (ref_AppliedPTransform_Reading customer data/Read_3)+(ref_AppliedPTransform_Mapping customer data to Join with Orders_4)
+2019-12-21 10:36:34,217 - INFO - Missing pipeline option (runner). Executing pipeline using the default runner: DirectRunner.
+2019-12-21 10:36:34,227 - INFO - Reading customer data..
+2019-12-21 10:36:34,291 - INFO - ==================== <function annotate_downstream_side_inputs at 0x000001A38F1C91E0> ====================
+2019-12-21 10:36:34,291 - INFO - ==================== <function fix_side_input_pcoll_coders at 0x000001A38F1C92F0> ====================
+2019-12-21 10:36:34,291 - INFO - ==================== <function lift_combiners at 0x000001A38F1C9378> ====================
+2019-12-21 10:36:34,291 - INFO - ==================== <function expand_sdf at 0x000001A38F1C9400> ====================
+2019-12-21 10:36:34,292 - INFO - ==================== <function expand_gbk at 0x000001A38F1C9488> ====================
+2019-12-21 10:36:34,292 - INFO - ==================== <function sink_flattens at 0x000001A38F1C9598> ====================
+2019-12-21 10:36:34,292 - INFO - ==================== <function greedily_fuse at 0x000001A38F1C9620> ====================
+2019-12-21 10:36:34,292 - INFO - ==================== <function read_to_impulse at 0x000001A38F1C96A8> ====================
+2019-12-21 10:36:34,292 - INFO - ==================== <function impulse_to_input at 0x000001A38F1C9730> ====================
+2019-12-21 10:36:34,292 - INFO - ==================== <function inject_timer_pcollections at 0x000001A38F1C98C8> ====================
+2019-12-21 10:36:34,292 - INFO - ==================== <function sort_stages at 0x000001A38F1C9950> ====================
+2019-12-21 10:36:34,292 - INFO - ==================== <function window_pcollection_coders at 0x000001A38F1C99D8> ====================
+2019-12-21 10:36:34,292 - INFO - Running (ref_AppliedPTransform_Reading customer data/Read_3)+(ref_AppliedPTransform_Mapping customer data to Join with Orders_4)
