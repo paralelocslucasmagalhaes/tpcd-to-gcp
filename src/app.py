@@ -9,6 +9,8 @@ from datetime import datetime
 from apache_beam.io.gcp.bigquery_tools import parse_table_schema_from_json
 from utils.bqschema.schema import _FIELDS
 import json
+from beam_nuggets.io import relational_db
+
 
 
 def _format_as_common_key_tuple(data_dict, common_key):
@@ -41,28 +43,6 @@ def main(argv=None):
     
     table_schema = parse_table_schema_from_json(json.dumps(_FIELDS))
 
-    # additional_bq_parameters = {
-    #   'timePartitioning': {
-    #                         'type': 'DAY',
-    #                         'field': 'orderdate'}}
-    
-    # Scrip para conectar no banco de dados
-    # db_config = DBConfig(drivername='postgresql', 
-    #                                 username='postgres',
-    #                                 password='Paralelo@2016$',
-    #                                 database='perfectorder',
-    #                                 host=known_args.host,
-    #                                 port = 5432)
-
-    ####### FILTERS EXAMPLES #######################
-    #
-    # today = date.today()
-    # filters = "orders_order.due_date >= TO_DATE('{}', 'YYYY-MM-DD')".format(today)
-    #
-    # filters = "orders_order.customer_id = 3 AND orders_order.due_date >= TO_DATE('{}', 'YYYY-MM-DD')".format(today)
-    #
-    #####################################################################################################################
-
     p = beam.Pipeline(options=pipeline_options)
 
         #########################################################
@@ -70,44 +50,56 @@ def main(argv=None):
     #       GENERAL DATA
     ############################################################
 
-    _region = f"{known_args.input}dss_region.csv"
-    _region_columns = ['r_regionkey','r_name','r_comment']
+    ## DATABASE CONFIGURATION
+    source_config = relational_db.SourceConfiguration(
+        drivername='mysql+pymysql',
+        host='relational.fit.cvut.cz',
+        port=3306,
+        username='guest',
+        password='relational',
+        database='tpcd',
+    )
+
+
     logging.info('Reading region data..')
     pregion = (
                     p 
-                        | 'Reading region data' >> beam.io.ReadFromText(_region, skip_header_lines=1)
-                        | 'Mapping region data to Json' >> beam.ParDo(Split(columns=_region_columns))
-                        | 'Mapping region values' >> beam.Map(lambda element: (element['r_regionkey'], element['r_name'] ))
+                        | 'Reading region data' >> relational_db.ReadFromDB(
+                                source_config=source_config,
+                                table_name='dss_region',
+                                query='select r_regionkey, r_name from dss_region')
+                        | 'Mapping region values' >> beam.Map(lambda element: (element['r_regionkey'], element['r_name']))
                 )
 
-    _nation = f"{known_args.input}dss_nation.csv"
-    _nation_columns = ['nationkey','nation_name','regionkey','n_comment']
     logging.info('Reading nation data..')
     pnation = (
                     p 
-                        | 'Reading nation data' >> beam.io.ReadFromText(_nation, skip_header_lines=1)
-                        | 'Mapping nation data to Json' >> beam.ParDo(Split(columns=_nation_columns))
-                        # | 'Getting Region Name' >> ApplyMap('region', 'n_regionkey', pregion)
-                        # | 'Mapping nation values' >> beam.Map(lambda element: {
-                        #                             'nationkey' : element['n_nationkey'],
-                        #                             'nation': element['n_name'],
-                        #                             'region': element['region'],
-                        #                             })
+                        | 'Reading nation data' >> relational_db.ReadFromDB(
+                                source_config=source_config,
+                                table_name='dss_nation',
+                                query="""select 
+                                         n_nationkey as nationkey, 
+                                         n_name as nation_name,
+                                         n_regionkey as regionkey
+                                         from dss_nation""")
                 )
 
-        #########################################################
+    ############################################################
     #
     #       CUSTOMER DATA
     ############################################################
-
-    _customer = f"{known_args.input}dss_customer.csv"
-    _customer_columns = ['custkey','customer_name','customer_addres','nationkey','phone','acctbal','mktsegment', 'comment']
-    logging.info('Reading customer data..')
     pcustomers = (
                     p 
-                        | 'Reading customer data' >> beam.io.ReadFromText(_customer, skip_header_lines=1)
-                        | 'Reshuffling customer data to be parallel' >> beam.Reshuffle()
-                        | 'Mapping customer data to Json' >> beam.ParDo(Split(columns=_customer_columns))
+                        | 'Reading customer data' >> relational_db.ReadFromDB(
+                                source_config=source_config,
+                                table_name='dss_customer',
+                                query="""select 
+                                         c_custkey as custkey, 
+                                         c_name as customer_name,
+                                         c_address as customer_addres,
+                                         c_nationkey as nationkey,
+                                         c_mktsegment as mktsegment
+                                         from dss_customer""")
                 )
     
     ## Enrich Customer Data
@@ -125,7 +117,6 @@ def main(argv=None):
                                                                 'customer_nation' :  element['nation_name'],
                                                                 'customer_region' : element['customer_region']
                                                                 } )
-
     )
 
         #########################################################
@@ -135,13 +126,21 @@ def main(argv=None):
     
     # Getting order data
     logging.info('Reading order data..')
-    _order_colums = ['orderkey','custkey','orderstatus','totalprice','orderdate','orderpriority','clerk','shippriority','comment']
-    _order = f"{known_args.input}dss_order.csv"
     porder = (
                     p 
-                        | 'Reading order data' >> beam.io.ReadFromText(_order, skip_header_lines=1)
+                        | 'Reading order data' >> relational_db.ReadFromDB(
+                                                    source_config=source_config,
+                                                    table_name='dss_order',
+                                                    query="""select 
+                                                            o_orderkey as orderkey,
+                                                            o_custkey as custkey,
+                                                            o_orderstatus as orderstatus,
+                                                            o_totalprice as totalprice,
+                                                            o_orderdate as orderdate,
+                                                            o_orderpriority as orderpriority,
+                                                            o_shippriority as shippriority
+                                                            from dss_order""")
                         | 'Reshuffling order data to be parallel' >> beam.Reshuffle()
-                        | 'Mapping order data to Json' >> beam.ParDo(Split(columns=_order_colums))
                         | 'cleaning unncessary fields from order' >> beam.Map(lambda element:{
                                         'orderkey': element['orderkey'],
                                         'custkey': element['custkey'],

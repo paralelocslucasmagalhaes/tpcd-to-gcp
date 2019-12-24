@@ -30,7 +30,7 @@ class build(_build):  # pylint: disable=invalid-name
 # The output of custom commands (including failures) will be logged in the
 # worker-startup log.
 CUSTOM_COMMANDS = [
-    # ['pip', 'install', 'SQLAlchemy==1.3.8'],
+    ['pip', 'install', 'beam-nuggets==0.15.1'],
     # ['pip','install','psycopg2==2.8.3'],
     # ['pip', 'install', 'google-cloud-storage==1.20.0']
 ]
@@ -73,7 +73,7 @@ class CustomCommands(setuptools.Command):
 
 
 REQUIRED_PACKAGES = [
-    # 'SQLAlchemy',
+    'beam-nuggets',
 
 ]
 
