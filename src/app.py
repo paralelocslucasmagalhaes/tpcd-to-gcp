@@ -21,20 +21,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def main(argv=None):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--input',
-                        dest='input',
-                        required=True,
-                        help='Input path')
-
     parser.add_argument('--output',
                         dest='output',
                         required=True,
                         help='Output file to write results to.')
 
-    # parser.add_argument('--host',
-    #                     dest='host',
-    #                     required=False,
-    #                     help='Database host')
 
     known_args, pipeline_args = parser.parse_known_args(argv)
 
@@ -99,7 +90,8 @@ def main(argv=None):
                                          c_address as customer_addres,
                                          c_nationkey as nationkey,
                                          c_mktsegment as mktsegment
-                                         from dss_customer""")
+                                         from dss_customer
+                                         limit 1000""")
                 )
     
     ## Enrich Customer Data
@@ -139,14 +131,15 @@ def main(argv=None):
                                                             o_orderdate as orderdate,
                                                             o_orderpriority as orderpriority,
                                                             o_shippriority as shippriority
-                                                            from dss_order""")
+                                                            from dss_order
+                                                            limit 1000""")
                         | 'Reshuffling order data to be parallel' >> beam.Reshuffle()
                         | 'cleaning unncessary fields from order' >> beam.Map(lambda element:{
                                         'orderkey': element['orderkey'],
                                         'custkey': element['custkey'],
                                         'orderstatus': element['orderstatus'],
                                         'totalprice': element['totalprice'],
-                                        'orderdate': datetime.strptime(element['orderdate'], '"%Y-%m-%d"').strftime('%Y-%m-%d'),
+                                        'orderdate':element['orderdate'].strftime('%Y-%m-%d'),
                                         'orderpriority': element['orderpriority'],
                                         'shippriority': element['shippriority']
                             }
@@ -175,12 +168,18 @@ def main(argv=None):
     ############################################################
 
     logging.info('Reading Supplier data..')
-    _supplier_colums = ['suppkey','supplier_name','supplier_address','nationkey','phone','acctbal','s_comment']
-    _supplier = f"{known_args.input}dss_supplier.csv"
     psupplier = (
                     p 
-                        | 'Reading supplier data' >> beam.io.ReadFromText(_supplier, skip_header_lines=1)
-                        | 'Mapping supplier data to Json' >> beam.ParDo(Split(columns=_supplier_colums))
+                        | 'Reading supplier data' >> relational_db.ReadFromDB(
+                                                    source_config=source_config,
+                                                    table_name='dss_supplier',
+                                                    query="""select 
+                                                            s_suppkey as suppkey,
+                                                            s_name as supplier_name,
+                                                            s_address as supplier_address,
+                                                            s_nationkey as nationkey
+                                                            from dss_supplier
+                                                            limit 1000""")
                 )
 
     ## Enrich Supplier Data
@@ -208,22 +207,22 @@ def main(argv=None):
     ############################################################
 
     logging.info('Reading Product data..')
-    _product_colums = ['partkey','product_name','product_manufacture','product_brand','product_type','product_size','product_container','retailprice','product_comment']
-    _product = f"{known_args.input}dss_part.csv"
     pproduct = (
                     p 
-                        | 'Reading product data' >> beam.io.ReadFromText(_product, skip_header_lines=1)
-                        | 'Mapping product data to Json' >> beam.ParDo(Split(columns=_product_colums))
-                        | 'Product mapping values' >> beam.Map(lambda element: {
-                            'partkey': element['partkey'],
-                            'product_name': element['product_name'],
-                            'product_manufacture': element['product_manufacture'],
-                            'product_brand': element['product_brand'],
-                            'product_type': element['product_type'],
-                            'product_size': element['product_size'],
-                            'product_container': element['product_container'],
-                            'retailprice': element['retailprice']
-                        })
+                        | 'Reading product data' >> relational_db.ReadFromDB(
+                                                    source_config=source_config,
+                                                    table_name='dss_part',
+                                                    query="""select 
+                                                            p_partkey as partkey,
+                                                            p_name as product_name,
+                                                            p_mfgr as product_manufacture,
+                                                            p_brand as product_brand,
+                                                            p_type  as product_type,
+                                                            p_size   as product_size,
+                                                            p_container as product_container,
+                                                            p_retailprice as retailprice
+                                                            from dss_part
+                                                            limit 1000""")
                 )
 
 
@@ -234,17 +233,17 @@ def main(argv=None):
 
 
     logging.info('Reading Product Availability data..')
-    _psupp_colums = ['partkey','suppkey','availqty','supplycost','ps_comment']
-    _psupp = f"{known_args.input}dss_partsupp.csv"
     ppsupp = (
                     p 
-                        | 'Reading product Availability data' >> beam.io.ReadFromText(_psupp, skip_header_lines=1)
-                        | 'Mapping product Availability data to Json' >> beam.ParDo(Split(columns=_psupp_colums))
-                        | 'Creating Complex Key for Product and Supplier' >> beam.Map(lambda element:{
-                                                                'ckey': "{}|{}".format(element['partkey'], element['suppkey']),
-                                                                'availqty': element['availqty'],
-                                                                'supplycost': element['supplycost']
-            })
+                        | 'Reading product Availability data' >> relational_db.ReadFromDB(
+                                                                source_config=source_config,
+                                                                table_name='dss_partsupp',
+                                                                query="""select 
+                                                                        CONCAT(ps_partkey, '|', ps_suppkey) as ckey,
+                                                                        ps_availqty as availqty,
+                                                                        ps_supplycost as supplycost
+                                                                        from dss_partsupp
+                                                                        limit 1000""")
                 )
 
     
@@ -255,15 +254,33 @@ def main(argv=None):
     ############################################################
 
     logging.info('Reading items data..')
-    _items_colums = ['orderkey','partkey','suppkey','l_linenumber','l_quantity','l_extendedprice','l_discount','l_tax','l_returnflag','l_linestatus','l_shipdate','l_commitdate','l_receiptdate','l_shipinstruct','l_shipmode','l_comment']
-    _items = f"{known_args.input}dss_lineitem.csv"
     pitems = (
                     p 
-                        | 'Reading items data' >> beam.io.ReadFromText(_items, skip_header_lines=1)
+                        | 'Reading items data' >> relational_db.ReadFromDB(
+                                                                source_config=source_config,
+                                                                table_name='dss_lineitem',
+                                                                query="""select 
+                                                                        CONCAT(l_partkey, '|', l_suppkey) as ckey,
+                                                                        l_orderkey as orderkey,
+                                                                        l_partkey as partkey,
+                                                                        l_suppkey as suppkey,
+                                                                        l_linenumber,
+                                                                        l_quantity,
+                                                                        l_extendedprice,
+                                                                        l_discount,
+                                                                        l_tax,
+                                                                        l_returnflag,
+                                                                        l_linestatus,
+                                                                        l_shipdate,
+                                                                        l_commitdate,
+                                                                        l_receiptdate,
+                                                                        l_shipinstruct,
+                                                                        l_shipmode
+                                                                        from dss_lineitem
+                                                                        limit 1000""")
                         | 'Reshuffling items data to be parallel' >> beam.Reshuffle()
-                        | 'Mapping items data to Json' >> beam.ParDo(Split(columns=_items_colums))
                         | 'Mapping items fields' >> beam.Map(lambda element: {
-                                        'ckey': "{}|{}".format(element['partkey'], element['suppkey']),
+                                        'ckey':  element['ckey'],
                                         'orderkey': element['orderkey'],
                                         'partkey': element['partkey'],
                                         'suppkey': element['suppkey'],
@@ -274,10 +291,10 @@ def main(argv=None):
                                         'tax': element['l_tax'],
                                         'returnflag': element['l_returnflag'],
                                         'linestatus': element['l_linestatus'],
-                                        'shipdate': datetime.strptime(element['l_shipdate'],'"%Y-%m-%d"').strftime('%Y-%m-%d'),
-                                        'commitdate': datetime.strptime(element['l_commitdate'],'"%Y-%m-%d"').strftime('%Y-%m-%d'),
-                                        'receiptdate': datetime.strptime(element['l_receiptdate'],'"%Y-%m-%d"').strftime('%Y-%m-%d'),
-                                        'delay' : (datetime.strptime(element['l_commitdate'], '"%Y-%m-%d"') - datetime.strptime(element['l_receiptdate'], '"%Y-%m-%d"')).days,
+                                        'shipdate': element['l_shipdate'].strftime('%Y-%m-%d'),
+                                        'commitdate': element['l_commitdate'].strftime('%Y-%m-%d'),
+                                        'receiptdate': element['l_receiptdate'].strftime('%Y-%m-%d'),
+                                        'delay' : (element['l_commitdate'] - element['l_receiptdate']).days,
                                         'shipinstruct': element['l_shipinstruct'],
                                         'shipmode': element['l_shipmode']
                                         }

@@ -2,6 +2,7 @@ setup.py
 pcs.egg-info/PKG-INFO
 pcs.egg-info/SOURCES.txt
 pcs.egg-info/dependency_links.txt
+pcs.egg-info/requires.txt
 pcs.egg-info/top_level.txt
 utils/__init__.py
 utils/beam_utils/__init__.py
