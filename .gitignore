@@ -1,4 +1,5 @@
 .vscode/
 export/
-beam*/
 venv/
+output/
+*.pyc
