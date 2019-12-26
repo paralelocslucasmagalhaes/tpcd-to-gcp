@@ -90,8 +90,7 @@ def main(argv=None):
                                          c_address as customer_addres,
                                          c_nationkey as nationkey,
                                          c_mktsegment as mktsegment
-                                         from dss_customer
-                                         limit 1000""")
+                                         from dss_customer """)
                 )
     
     ## Enrich Customer Data
@@ -131,8 +130,7 @@ def main(argv=None):
                                                             o_orderdate as orderdate,
                                                             o_orderpriority as orderpriority,
                                                             o_shippriority as shippriority
-                                                            from dss_order
-                                                            limit 1000""")
+                                                            from dss_order """)
                         | 'Reshuffling order data to be parallel' >> beam.Reshuffle()
                         | 'cleaning unncessary fields from order' >> beam.Map(lambda element:{
                                         'orderkey': element['orderkey'],
@@ -178,8 +176,7 @@ def main(argv=None):
                                                             s_name as supplier_name,
                                                             s_address as supplier_address,
                                                             s_nationkey as nationkey
-                                                            from dss_supplier
-                                                            limit 1000""")
+                                                            from dss_supplier""")
                 )
 
     ## Enrich Supplier Data
@@ -221,8 +218,7 @@ def main(argv=None):
                                                             p_size   as product_size,
                                                             p_container as product_container,
                                                             p_retailprice as retailprice
-                                                            from dss_part
-                                                            limit 1000""")
+                                                            from dss_part """)
                 )
 
 
@@ -242,8 +238,7 @@ def main(argv=None):
                                                                         CONCAT(ps_partkey, '|', ps_suppkey) as ckey,
                                                                         ps_availqty as availqty,
                                                                         ps_supplycost as supplycost
-                                                                        from dss_partsupp
-                                                                        limit 1000""")
+                                                                        from dss_partsupp """)
                 )
 
     
@@ -276,8 +271,7 @@ def main(argv=None):
                                                                         l_receiptdate,
                                                                         l_shipinstruct,
                                                                         l_shipmode
-                                                                        from dss_lineitem
-                                                                        limit 1000""")
+                                                                        from dss_lineitem""")
                         | 'Reshuffling items data to be parallel' >> beam.Reshuffle()
                         | 'Mapping items fields' >> beam.Map(lambda element: {
                                         'ckey':  element['ckey'],

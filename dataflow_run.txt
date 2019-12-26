@@ -1,1 +1,1 @@
-python app.py --setup_file ./setup.py --input gs://perfect-order-api/santodigital/ --output orders --runner DataflowRunner --region us-east1 --project perfect-order-api --temp_location gs://perfect-order-api/tmp/ --staging_location gs://perfect-order-api/binaries/
+python app.py --setup_file ./setup.py --output orders --runner DataflowRunner --region us-east1 --project perfect-order-api --temp_location gs://perfect-order-api/tmp/ --staging_location gs://perfect-order-api/binaries/
