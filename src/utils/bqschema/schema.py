@@ -46,12 +46,6 @@ __SCHEMA = [
     },
 
     {
-        "description": "customer_addres",
-        "mode": "NULLABLE",
-        "name": "customer_addres",
-        "type": "STRING"
-    },
-    {
         "description": "mktsegment",
         "mode": "NULLABLE",
         "name": "mktsegment",
@@ -139,12 +133,6 @@ __SCHEMA = [
                 "type": "DATE"
             },
 
-            {
-                "description": "delay",
-                "mode": "NULLABLE",
-                "name": "delay",
-                "type": "INTEGER"
-            },
 
             {
                 "description": "shipinstruct",
@@ -207,12 +195,7 @@ __SCHEMA = [
                 "name": "supplier_name",
                 "type": "STRING"
             },
-            {
-                "description": "supplier_address",
-                "mode": "NULLABLE",
-                "name": "supplier_address",
-                "type": "STRING"
-            },
+            
             {
                 "description": "supplier_nation",
                 "mode": "NULLABLE",
